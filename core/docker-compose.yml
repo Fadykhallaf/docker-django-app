@@ -1,12 +1,38 @@
 version: "3.8"
-services: 
-    app:
-        build: .
-        volumes: 
-            - .:/django
-        ports: 
-            - 8000:8000
-        image: dj-docker:v1
-        container_name: django_container
-        command: python manage.py runserver 0.0.0.0:8000
-        
+services:
+  db:
+    # image: postgres
+    # volumes:
+    #   - ./data/db:/var/lib/postgresql/data
+    # environment:
+    #   - POSTGRES_DB=postgres
+    #   - POSTGRES_USER=postgres
+    #   - POSTGRES_PASSWORD=postgres
+    # container_name: postgres_db
+    image: mysql:5.7
+    hostname: db
+    environment:
+      MYSQL_DATABASE: 'django-app-db'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+    volumes:
+      - ./data/mysql/db:/var/lib/mysql
+
+  web:
+    build: .
+    volumes:
+      - .:/django
+    ports:
+      - 8000:8000
+    image: web:django
+    container_name: django_container
+    links: 
+        - db
+    depends_on:
+        - db 
+    command:
+        - /bin/bash
+        - -c
+        - |
+          sleep 10
+          python3 manage.py migrate
+          python3 manage.py runserver 0.0.0.0:8000
